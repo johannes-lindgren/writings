@@ -17,7 +17,7 @@ However, before delving deep into TypeScript's syntax, let's first explore what 
 
 == Why Adopt TypeScript?
 
-The main reason to adopt TypeScript is to establish guarantees of how JavaScript code behaves. One concrete example is to prevent code from crashing; it is preferable to give the programmer an error in the IDE than to let the client experience an incident in production. Unfortunately, it is not so easy as to simply enable TypeScript in an existing project: before you may reap the benefits, you must first start programming in a much more restrictive way. Going from untyped languages to types languages is a shift in the programming paradigm. Since the advent of coputing, programming languages have been following a trend of becoming more restrictive while giving more compile-time guarantees:
+The main reason to adopt TypeScript is to establish guarantees of how JavaScript runs. One concrete example is to prevent code from crashing; it is preferable to give the programmer an error in the IDE than to let the client experience an incident in production. Unfortunately, it is not so easy as to simply enable TypeScript in an existing project: before you may reap the benefits, you must first start programming in a much more restrictive way. Going from untyped languages to types languages is a shift in the programming paradigm. Since the advent of computing, programming languages have been following a trend of becoming more restrictive while giving more compile-time guarantees:
 
 - Programming started with raw machine code and Assembly languages that directly translates to machine code. Assembly languages are notoriously difficult to reason about. Therefore, more restrictive languages soon emerged.
 - Procedural languages, such as Fortran, contains the programmer to deal with variables, rather than registers and memory addresses.
@@ -123,7 +123,7 @@ const digit = 10
 
 We're going to explore the various types in TypeScript, starting with the most primitive types, and then moving on to more complex, composite types.
 
-=== Literal/value types
+=== Literal types
 
 The most primitive kind of type is a type literal:
 
@@ -140,7 +140,7 @@ So the symbols `undefined`, `true`, `false`, `123`, `"hello"` can be either valu
 
 image:primitive-types.svg[]
 
-=== Sum/Union Types
+=== Union Types
 
 Value types are not very interesting on their own--they get much more interesting when they're combined into larger types. Consider the two types `true` and `false`:
 
@@ -366,7 +366,7 @@ You may encounter the `any` type at some point. `any` is the same type as `unkno
 
 WARNING: The `any` type disables the type checker--never use it!
 
-== Tuples(product types)
+== Tuples
 
 While unions describe types of that are either "this _or_ that", tuples describes types that embed "this _and_ that".
 
@@ -935,11 +935,79 @@ const id = '123' as unknown as number
 
 Now, TypeScript will consider `id` as a number, when it in fact is a string! In some niche cases, it can be useful to override the type checker when you are absolutely certain that you know better than TypeScript. But needless to say, once you do this, TypeScript will no longer be able to save you from runtime errors. Use `as` with great caution!
 
-== Functions: Parametric Values (exponential types)
+== Functions: Parametric Values
 
-A function can be interpreted a parameterized value; that is, to construct the value, you need to provide a value for the parameter.
+While you're likely quite familiar with functions already, let's pause for a moment and think about what a function really is, mathematically speaking. This will be helpful when learning about generics.
 
-There are two ways to annotate a function. Either create a type alias for the function and annotate the identifier that contains the function:
+A function can be though of a map from one value to another. To represent any function, simply write down a list of all inputs and the corresponding output; for example, the logical NOT can be represented as:
+
+[cols="1,1"]
+|===
+| Input value | Output value
+| `true`  | `false`
+| `false` | `true`
+|===
+
+Since the input is of type `boolean`, there are only two possible inputs (`true` and `false`), and thus the table contains two rows. The type of this function is:
+
+[source,typescript]
+----
+// Not valid TypeScript
+(boolean) => boolean
+----
+
+Unfortunately, https://github.com/microsoft/TypeScript/issues/13152#issuecomment-269099764[TypeScript requires] that the parameter has an arbitrary name–-even though it serves no purpose (other than documentation, possibly):
+
+[source,typescript]
+----
+// Correct
+type Not = (a: boolean) => boolean
+----
+
+Functions with multiple arguments can be thought of functions with a single argument where the argument is a tuple; for example, the logical AND can be represented as:
+
+[cols="1,1"]
+|===
+| Input value | Output value
+| (`true, true`)  | `true`
+| (`true, false`) | `false`
+| (`false, true`) | `false`
+| (`false, false`)| `false`
+|===
+
+Where the type of this function is:
+
+[source,typescript]
+----
+type And = (a: boolean, b: boolean) => boolean
+----
+
+In JavaScript, you _can_  implement functions as maps where the input-output pairs are key-value pairs. While the example above with the logical operations would be contrived, consider a more realistic scenario that maps color names to their RGB values:
+
+[source,typescript]
+----
+const colors = {
+  red: [255, 0, 0],
+  green: [0, 255, 0],
+  blue: [0, 0, 255],
+}
+----
+
+Now you can "call" this function by indexing:
+
+[source,javascript]
+----
+console.log(colors['red'])
+----
+
+To represent a function that takes a number as argument this way, you would need an object with 2^64^ properties, so instead, functions are normally represented as function expressions:
+
+[source,javascript]
+----
+const isPositive = (value) => value > 0
+----
+
+In TypeScript, you can annotate the identifier of a function like any value:
 
 [source,typescript]
 ----
@@ -951,39 +1019,72 @@ Alternatively, annotate the parameters and the return type directly:
 
 [source,typescript]
 ----
-const isPositive = (value: number) => value > 0
+const isPositive = (value: number): boolean => value > 0
 ----
+
+A function can thus be thought of in two different ways:
+
+1. As a value (object) that lists all input-output pairs.
+2. As an expression that you need to hand a value (as input) before you get a value (as output) back.
 
 == Generics: Parametric Types
 
 Similarly to the relationships between values and functions, a type can be parameterized with a _type parameter_. That is, to construct the type, we first need to provide a type for the parameter.
+
+For example, consider a table that maps one set of type to another type, and let's figure out what it means:
+
+[cols="1,1"]
+|===
+| Input type | Output type
+| `number`  | `[number, number]`
+| `string`  | `[string, string]`
+| `boolean` | `[boolean, boolean]`
+| ...   | ...
+|===
+.What would be a suitable name for this parameterized type? The answer is in the text below.
+
+Please note that the entries in the table are not values, they are _types_. What we are dealing with is a __kind of__ function that you give a type and returns a new type back to you--a parameterized type, or in TypeScript more commonly referred to as _generic_ type.
+
+NOTE: The word choice _generic_ is unfortunate--it's a relic from Java, which has generic classes. A more suitable name would be _parametric type_.
 
 If the syntax for parameterized types and types was consistent with the syntax for values and functions, we _would_ write it as such:
 
 [source,typescript]
 ----
 // Incorrect!
-type Pair = <T> => [T, T]
+<T> => [T, T]
 ----
 
-Instead, we write
+Instead, we write:
 
 [source,typescript]
 ----
 type Pair<T> = [T, T]
 ----
 
-`Pair` is a sort of function that takes one type as an argument and returns a new type that is contructed from the type parameter.
-
-If we want to annotate a value with this generic, we first need to construct a type from it by passing a type as an argument
+That's right: the table above denotes a pair! `Pair` is a _sort of_ function that accepts one type as an argument and returns a new type that is constructed from the type argument. Since `Pair` in itself is not a type, we cannot annotate identifiers with it without providing a type argument:
 
 [source,typescript]
 ----
-type PairOfStrings = Pair<string>
+// Incorrect: `Pair` is not a type
+const pair: Pair = [1, 2]
+----
+
+If we want to annotate a value with this generic, we first need to construct a type from it by passing a type as an argument:
+
+[source,typescript]
+----
 const couple: Pair<string> = ['Sissi', 'Franz Joseph']
 ----
 
-The type parameter is just a type as any other, and we can arbitrarily construct new types with it.
+This is equivalent to:
+
+[source,typescript]
+----
+const couple: [string, string] = ['Sissi', 'Franz Joseph']
+----
+
+Type parameters are types as any other, and we can arbitrarily construct new types with it.
 
 [source,typescript]
 ----
@@ -991,6 +1092,7 @@ type HttpOkResult<T> = {
   statusCode: 200,
   body: T
 }
+// `T` gets substituted with the type `{ content: unknown }`
 const storyResult: HttpOkResult<{ content: unknown }> = {
   statusCode: 200,
   body: {
@@ -1004,7 +1106,7 @@ const storyResult: HttpOkResult<{ content: unknown }> = {
 
 === Generic Discriminated Unions
 
-Generics (parametric types) in especially handy when combined with records and unions. With these three constructs, we can model any kind of data.
+Generics (parametric types) are especially handy when combined with records and unions. With these three constructs, we can model any kind of data.
 
 Let's revisit the tagged unions that we defined earlier where we defined this discriminated union:
 
@@ -1023,7 +1125,7 @@ type Err = {
 type OkOrFailure = Ok | Err
 ----
 
-Wouldn't it be great if the `data` property was not bound to a specific type. If it was parameterized with a type parameter, we could re-use the `Result` type for different kinds of data:
+Wouldn't it be great if the `data` property was not bound to a specific type? If it was parameterized with a type parameter, we could re-use the `Result` type for different kinds of data:
 
 [source,typescript]
 ----
@@ -1124,13 +1226,26 @@ Unfortunately, this does not work in TypeScript because TypeScript will interpre
 const reverse = <T>(items: T[]) => items.reverse()
 ----
 
-which has the intended effect:
+which has the intended effect of creating a _generic function_, which we can invoke by also providing type arguments:
 
 [source,typescript]
 ----
+const reversedAlphabet = reverse<string>(['a', 'b', 'c', 'd', 'e', 'f'])
+const reversedDigits = reverse<number>([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+----
+
+The `reverse` function now both a regular function _and_ a parameterized type.
+
+In most cases when dealing with generic functions, TypeScript will be able to infer the type arguments from the function arguments, so you don't have to provide them explicitly:
+
+[source,typescript]
+----
+// `string` is inferred from the function argument
 const reversedAlphabet = reverse(['a', 'b', 'c', 'd', 'e', 'f'])
+// `number` is inferred from the function argument
 const reversedDigits = reverse([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 ----
+
 
 == TODOs
 
