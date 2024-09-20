@@ -1,4 +1,4 @@
-= TypeScript Essentials
+= TypeScript Foundations for JavaScript Programmers
 Johannes Lindgren
 :imagesdir: images
 :toc:
@@ -15,7 +15,7 @@ This is a brief introduction to TypeScript for programmers who are already famil
 
 However, before delving deep into TypeScript's syntax, let's first explore what motivates us to adopt TypeScript in the first place, and how TypeScript relates to JavaScript.
 
-== Why Adopt TypeScript?
+== Why TypeScript?
 
 The main reason to adopt TypeScript is to establish guarantees of how JavaScript runs. One concrete example is to prevent code from crashing; it is preferable to give the programmer an error in the IDE than to let the client experience an incident in production. Unfortunately, it is not so easy as to simply enable TypeScript in an existing project: before you may reap the benefits, you must first start programming in a much more restrictive way. Going from untyped languages to types languages is a shift in the programming paradigm. Since the advent of computing, programming languages have been following a trend of becoming more restrictive while giving more compile-time guarantees:
 
@@ -325,6 +325,14 @@ Unfortunately, there is one inconsistency in the type inference mechanism: TypeS
 const pi = 3.14159
 ----
 
+and string literals are inferred as `string`:
+
+.The type of `defaultLogLevel` is inferred as `string`
+[source,typescript]
+----
+const defaultLogLevel = 'info'
+----
+
 Here's how TypeScript infers primitive values:
 
 * numbers (`1`, `0.5`, `NaN`, `100`) are inferred as `number`
@@ -337,10 +345,18 @@ Here's how TypeScript infers primitive values:
 
 To infer it as the literal type, you can annotate the use a _type assertion_:
 
-.The type of `pi` is inferred as `3.14159`
+.The type of `logLevel` is inferred as `'info'`
 [source,typescript]
 ----
-const pi = 3.14159 as 3.14159
+const logLevel = 'info' as 'info'
+----
+
+To make it more convenient, use an `as const` expression:
+
+.The type of `logLevel` is inferred as `'info'`
+[source,typescript]
+----
+const logLevel = 'info' as const
 ----
 
 == The `unknown` type
@@ -1051,7 +1067,7 @@ If the syntax for parameterized types and types was consistent with the syntax f
 
 [source,typescript]
 ----
-// Incorrect!
+// Pseudocode
 <T> => [T, T]
 ----
 
@@ -1246,20 +1262,363 @@ const reversedAlphabet = reverse(['a', 'b', 'c', 'd', 'e', 'f'])
 const reversedDigits = reverse([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 ----
 
+== Type operators
+
+In this chapter, you will learn some basic type operators. Although perhaps they're not the most exciting thing to learn about, they're simple; yet powerful; and can be used to construct complex types--especially when combined with mapped types.
+
+=== `typeof` type operator
+
+Consider a value like the one below:
+
+[source,typescript]
+----
+function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // ...
+}
+----
+
+Imagine that you want to implement a wrapper with the same API; you'd need to annotate your function with the same types:
+
+[source,typescript]
+----
+type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+const myFetch: Fetch = (input, init) => {
+  // ...
+}
+----
+
+However, TypeScript had already inferred this type from the `fetch` function--it just didn't provide a type alias that you could refer to. The `typeof` type operator lets you extract the type of a value:
+
+[source,typescript]
+----
+const myFetch: typeof fetch = (input, init) => {
+  // ...
+}
+----
+
+Note that this is not the same operator as the `typeof` _runtime_ operator, which gets executed and returns a string value. But the `typeof` _type operator_ is evaluated at compile time and can thus only be used in type expressions.
+
+=== Indexed Access Types (`[]`)
+
+You can index object types with the `[]` type operator to get the type of a property:
+
+[source,typescript]
+----
+type User = {
+  id: number
+  name: string
+  email: string
+}
+type UserId = User['id'] // number
+----
+
+Just like with the `typeof` type operator, the `[]` type operator is evaluated at compile time and can only be used in type expressions. This means that the `'id'` type argument is not a string value, but a type.
+
+This operator can be useful when you want to indicate that another property or function parameter has a relation to the property of an object type:
+
+[source,typescript]
+----
+type User = {
+  id: number
+  parentId: User['id']
+}
+const getUser = (id: User['id']) => {
+  // ...
+}
+----
+
+If it were not for the `[]` operator, you would only see `parentId: number` in the `User` type alias, and `id: number` in the function signature. Not that if you now change the type of `id` in `User`, the type of `parentId` and `id` in `getUser` will automatically be updated.
+
+Indexed access types can be used with discriminated unions to extract the type that describes all possible tags in the union:
+
+[source,typescript]
+----
+type Asset = {
+  type: 'image'
+  url: string
+} | {
+  type: 'video'
+  url: string
+  duration: number
+} | {
+  type: 'audio'
+  url: string
+  duration: number
+}
+type AssetType = Asset['type'] // 'image' | 'video' | 'audio'
+----
+
+This is much more convenient than having to define the types twice.
+
+It can also be used to index arrays:
+
+[source,typescript]
+----
+// as const so that we infer the tuple `['info', 'warn', 'error']` and not `string[]`
+const allLogLevels = ['info', 'warn', 'error'] as const
+// `typeof allColors` yields the type `['info', 'warn', 'error']`
+type Color = (typeof allColors)[number] // 'info' | 'warn' | 'error'
+----
+
+Now all log levels are defined in one place, and you can easily add or remove log levels without having to update the type alias. There's no repetition of the words `'info'`, `'warn'`, and `'error'`.
+
+=== `keyof` type operator
+
+While the indexed access type operator lets you extract the type of a property, the `keyof` type operator lets you extract the _keys_ of an object type:
+
+[source,typescript]
+----
+type PaletteColor = {
+    main: string
+    contrast: string
+}
+type Palette = {
+    primary: PaletteColor
+    secondary: PaletteColor
+}
+type Color = keyof PaletteColor
+----
+
+What type does `keyof Palette` evaluate to? Any value that is a key of `Palette` is either `'primary'` or `'secondary'`, which means that it is a union of these literal types--`'primary' | 'secondary'`.
+
+[source,typescript]
+----
+type Color = keyof Palette // 'primary' | 'secondary'
+----
+
+Here's an example of how it can come in handy:
+
+[source,typescript]
+----
+const palette: Palette = {
+    primary: {
+        main: 'deepskyblue',
+        contrast: 'white',
+    },
+    secondary: {
+        main: 'floralwhite',
+        contrast: 'black',
+    },
+}
+
+// color must be a key in the palette
+const createButton = (color: keyof Palette) => {
+    const button = document.createElement('button')
+    button.style.backgroundColor = palette[color].main
+    button.style.backgroundColor = palette[color].contrast
+    return button
+}
+
+const primaryButton = createButton('primary')
+const secondaryButton = createButton('secondary')
+----
+
+The benefit of deriving the type alias `Color` from the object type `Palette` is that the information about the keys are kept in one place--in `Palette`. But what if we want to do it the other way around; that is, to derive the type `Palette` from `Color`? Enter _mapped types_.
+
+=== Mapped Types
+
+In this chapter, you will learn how to construct object and array types by mapping over the keys. Combined with generics, this lets us construct some very powerful higher-order types.
+
+=== Mapped Object Types
+
+Forget about types for a moment and consider _values_: how can you construct an object from a set of keys? To be able to tie the solution into TypeScript, the solution should be written in a declarative, functional style. Here's a three-step plan:
+
+1. Define a set of keys (as an array of string)
+2. Map each key to a key-value pair (with `Array.prototype.map()]`)
+3. Construct an object from all key-value pairs (with `Object.fromEntries()`)
+
+Let's take a concrete example with vectors, where we want to construct an origin (all values zeros) from a set of dimensions:
+
+[source,typescript]
+----
+// 1) Define a set of keys
+const dimensions = ['x', 'y', 'z']
+// Result: { x: 0, y: 0, z: 0 }
+const origin =
+  // 3) construct an object from all key-value pairs
+  Object.fromEntries(
+    // 2) map each key to a key-value pair
+    dimensions.map((dimension) =>
+      [dimension, 0]
+    )
+  );
+----
+
+Now let's translate this question into TypeScript: how can we construct an object type from a set of keys? We'll use the same three-step plan:
+
+1. Define a set of keys--in the type system, this is represented with a union of string literals
+2. Map each key to a key-value pair (with a mapped type)
+3. Construct an object from all key-value pairs (with an object type)
+
+Let's consider the example with vectors, but this time we construct a type from the set of keys:
+
+[source,typescript]
+----
+// 1) Define a set of keys
+type Dimension = 'x' | 'y' | 'z'
+// Result: { x: number, y: number, z: number }
+type CartesianVector3 =
+// 3) construct an object from all key-value pairs
+{
+  // 2) map each key to a key-value pair
+  [Key in Dimension]: number
+}
+----
+
+Although the syntax differs a bit from JavaScript—there's no `map` or `fromEntries`—the principle is the same: the type is constructed by mapping over a set of keys.
+
+Earlier, we saw how we could use the `keyof` operator to derive a type alias for the keys from an object type. We now know how to use mapped types to derive the object type from the keys:
+
+[source,typescript]
+----
+type Color = 'primary' | 'secondary'
+type Palette = {
+  [Key in Color]: {
+      main: string
+      contrast: string
+  }
+}
+----
+
+=== Generic Mapped Types
+
+In the previous example, `Key` is a type parameter—analogous to the argument in the callback function of `Array.prototype.map()`—and can be used on the right side of the colon to construct the object type:
+
+[source,typescript]
+----
+// Result: { a: 'a', b: 'b' }
+type A = {
+  [Key in 'a' | 'b']: Key
+}
+----
+
+This is a silly example, but when used in parameterized (generic) types, `Key` can be used to _index the type parameter_.
+
+[source,typescript]
+----
+type Nullable<T> = {
+  [Key in keyof T]: T[Key] | null
+}
+----
+
+This parameterized type takes any object type `T`, maps each key `K` in `T` to the corresponding property value `T[K]`, and forms a union with `null`. The type that is returned is thus a variant of `T` where all properties are nullable; for example:
+
+[source,typescript]
+----
+type User = {
+  id: number
+  name: string
+  email: string
+}
+// Result: { id: number | null, name: string | null, email: string | null }
+type NullableUser = Nullable<User>
+----
+
+We can do the same with `undefined`:
+
+[source,typescript]
+----
+type Undefinable<T> = {
+  [Key in keyof T]: T[Key] | undefined
+}
+----
+
+=== Optional Properties in Mapped Types
+
+We saw how we can define a parameterized type that makes all properties into unions with `undefined`. But a property being `undefined` is not the same as being absent. For example, this is perfectly valid:
+
+[source,typescript]
+----
+// Ok: all properties are present
+const user: Undefinable<User> = {
+  id: 1,
+  name: 'August',
+  email: undefined,
+}
+----
+
+but is not, for one of the properties is missing:
+
+[source,typescript]
+----
+// Error: `name` is missing
+const user: Undefinable<User> = {
+  id: 1,
+  name: 'August',
+}
+----
+
+To make properties _optional_ in mapped types, we can use the `?:` notation:
+
+[source,typescript]
+----
+type Partial<T> = {
+  [Key in keyof T]?: T[Key]
+}
+----
+
+This generic type takes any object type `T` and returns a new object type where all properties are optional.
+
+Now we can write our code as such:
+
+[source,typescript]
+----
+// The email is missing, and that's okay!
+// We can also assign `undefined` values to all properties
+const user: Partial<User> = {
+  id: 1,
+  name: undefined,
+}
+----
+
+To do the reverse--to make all properties required--use the `-?:` notation:
+
+[source,typescript]
+----
+type Required<T> = {
+  [Key in keyof T]-?: T[Key]
+}
+----
+
+TIP: TypeScript provides several so-called utility types to facilitate common type transformations. `Partial` and `Required` are two of those. You can use the utility types without fully understanding TypeScript generics. See the https://www.typescriptlang.org/docs/handbook/utility-types.html[full reference on typescriptlang.org]--they will come in handy!
+
+=== Mapped Types: Tuples
+
+You can also map over tuples. Though we normally denote tuples and arrays with `[]`, TypeScript treats them as objects where the properties are numeric:
+
+. Two equivalent ways to denote a tuple type
+[source,typescript]
+----
+type TripletA = [number, string, boolean]
+type TripletB = {
+  [0]: number
+  [1]: string
+  [2]: boolean
+}
+----
+
+This means that you can create mapped types for tuples with the same syntax as for objects:
+
+[source,typescript]
+----
+type NullableTriplet<T> = {
+  [Key in keyof T]: (value: T[Key]) => T[Key]
+}
+----
+
+This utility type takes a tuple type `T` and returns a new tuple type where each element are transformations of the original elements.
+
+=== Index Signatures (`[key: string]: T`)
 
 == TODOs
 
 Topics that were not covered, but which I intend to include in the future:
 
-* Mapped types
-* `typeof` type operator
-* `keyof` type operator
 * `extends` type constraint
 * `extends` conditional types, and `infer`
-* `[]` type operator
-* `as const`
-* `satisfies`
-* `@ts-expect-error` for testing generic types
+* Testing
+** `satisfies`
+** `@ts-expect-error` for testing generic types
 
 == Appendix
 
