@@ -470,7 +470,7 @@ const numbers: number[] = [1, 2, 3, 4, 5, 6, 7, 8]
 const booleans: boolean[] = [false, true, false]
 ----
 
-== Object types/Records (product types)
+== Object Types
 
 Tuples and arrays lets us encode multiple types into a new type. For example, we could encode a person's name and age in a tuple:
 
@@ -1778,17 +1778,38 @@ type NullableTriplet<T> = {
 
 This utility type takes a tuple type `T` and returns a new tuple type where each element are transformations of the original elements.
 
-=== Index Signatures (`[key: string]: T`)
-
 == TODOs
 
 Topics that were not covered, but which I intend to include in the future:
 
 * `extends` type constraint
 * `extends` conditional types, and `infer`
-* Testing
+* covariance and contravariance
+* `instanceof` type guard
+* type declarations
+  ** module augmentation
+* `{}` type
+* `object` type
+* Compiler options and @typescript-eslint
+* nominal vs structural type system.
+* Exact and inexact object types (extra properties allowed)
 ** `satisfies`
-** `@ts-expect-error` for testing generic types
+* Testing generic types
+  ** `@ts-expect-error` for testing generic types
+* Index Signatures (`[key: string]: T`)
+* Patterns to avoid
+  ** `any`
+  ** Enums
+  ** Interfaces
+  ** Assertion guards
+  ** decorators
+* Out of scope (short mention)
+  ** template literals
+  ** classes
+  ** `this`
+  ** `readonly`
+* Common pitfalls
+  ** Misuse of constants (use type literals)
 
 == Appendix
 
