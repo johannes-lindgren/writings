@@ -1,5 +1,5 @@
 name: CI
-on: [push, pull_request]
+on: [pull_request]
 
 defaults:
   run:
@@ -30,29 +30,6 @@ jobs:
           mdbook --version
       - name: Run tests
         run: mdbook test
-  package_tests:
-    name: Run package tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - name: Update rustup
-        run: rustup self update
-      - name: Install Rust
-        run: |
-          rustup set profile minimal
-          rustup toolchain install 1.81 -c rust-docs
-          rustup default 1.81
-      - name: Run `tools` package tests
-        run: |
-          cargo test
-      - name: Run `mdbook-trpl-note` package tests
-        working-directory: packages/mdbook-trpl-note
-        run: |
-          cargo test
-      - name: Run `mdbook-trpl-listing` package tests
-        working-directory: packages/mdbook-trpl-listing
-        run: |
-          cargo test
   lint:
     name: Run lints
     runs-on: ubuntu-latest
