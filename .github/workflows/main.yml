@@ -1,0 +1,58 @@
+name: CI
+on: [pull_request]
+
+defaults:
+  run:
+    working-directory: ./typescript-for-javascript-programmers
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Update rustup
+        run: rustup self update
+      - name: Install Rust
+        run: |
+          rustup set profile minimal
+          rustup toolchain install 1.81 -c rust-docs
+          rustup default 1.81
+      - name: Install mdbook
+        run: |
+          mkdir bin
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.40/mdbook-v0.4.40-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=bin
+          echo "$(pwd)/bin" >> "${GITHUB_PATH}"
+      - name: Report versions
+        run: |
+          rustup --version
+          rustc -Vv
+          mdbook --version
+      - name: Run tests
+        # Force all code blocks to specify the language
+        run: mdbook test
+      - name: Build
+        run: mdbook build
+      - name: Upload Artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: page
+          path: ./typescript-for-javascript-programmers/book
+          if-no-files-found: error
+#  deploy:
+#    runs-on: ubuntu-latest
+#    needs: build
+#    environment:
+#      name: github-pages
+#      url: ${{steps.deployment.outputs.page_url}}
+#    steps:
+#      - uses: actions/download-artifact@master
+#        with:
+#          name: page
+#          path: .
+#      - uses: actions/configure-pages@v1
+#      - uses: actions/upload-pages-artifact@v1
+#        with:
+#          path: .
+#      - id: deployment
+#        uses: actions/deploy-pages@main
