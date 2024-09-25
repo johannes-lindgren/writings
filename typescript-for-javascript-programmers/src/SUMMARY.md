@@ -2,13 +2,14 @@
 
 [TypeScript for JavaScript Programmers](./title-page.md)
 
-[Whole book (TMP)](./tmp.md)
-[Introduction](./ch00-00-introduction.md)
+[About This Book](./ch00-00-introduction.md)
 
 - [Why TypeScript?](./ch01-00-why-typescript.md)
     - [a Language or a Linter?](./ch01-01-typescript-a-language-or-a-linter.md)
     - [Types](./ch01-02-types.md)
-# Foundations
+
+# Basic Types
+
 - [Primitive Types](./ch02-00-primitive-types.md)
   - [The `never` type](./ch02-01-never-type.md)
   - [Literal Types](./ch02-02-literal-types.md)
@@ -17,13 +18,16 @@
   - [`number`](./ch02-05-number.md)
   - [`string`](./ch02-06-string.md)
   - [`symbol` and `bigint`](./ch02-07-symbol-and-bigint.md)
-- [Type Inference](./ch03-00-type-inference.md)
-  - [Type Inference of Primitive Values](./ch03-01-type-inference-of-primitive-values.md)
-  - [The `unknown` Type](./ch03-02-unknown-type.md)
 - [Tuples](ch04-00-tuples.md)
 - [Arrays](ch05-00-arrays.md)
 - [Object Types (with named properties)](ch06-00-object-types.md)
   - [Optional Properties](ch06-01-optional-properties.md)
+- [The `unknown` Type](./ch03-02-unknown-type.md)
+
+# Type Safety
+
+- [Type Inference](./ch03-00-type-inference.md)
+  - [Type Inference of Primitive Values](./ch03-01-type-inference-of-primitive-values.md)
 - [Type Guards](ch07-00-type-guards.md)
   - [Non-null and Non-undefined Type Guards](ch07-01-non-null-and-non-undefined-type-guards.md)
   - [The `typeof` type guard](ch07-02-typeof-type-guard.md)
@@ -35,6 +39,10 @@
   - [Discriminated/tagged unions & Pattern Matching](ch07-08-discriminated-unions.md)
 - [Type Assertions](ch08-00-type-assertions.md)
   - [Type Assertions with `unknown`](ch08-01-type-assertions-with-unknown.md)
+- [Ignoring Errors](ch13-00-ignoring-errors.md)
+
+# Type Transformations
+
 - [Functions: Parametric Values](ch09-00-functions-parametric-values.md)
 - [Generics: Parametric Types](ch10-00-generics-parametric-types.md)
   - [Generic Discriminated Unions](ch10-01-generic-discriminated-unions.md)
@@ -49,6 +57,7 @@
   - [Generic Mapped Types](ch12-02-generic-mapped-types.md)
   - [Optional Properties in Mapped Types](ch12-03-optional-properties-in-mapped-types.md)
   - [Mapped Tuples](ch12-04-mapped-tuples.md)
-- [Ignoring Errors](ch13-00-ignoring-errors.md)
 
-[TODO: Coming Soon (hopefully)](./ch13-00-coming-soon.md)
+---
+
+[Coming Soon (hopefully)](./ch13-00-coming-soon.md)
