@@ -7,6 +7,7 @@ NOTE: A type error only indicates that the compiler cannot guarantee the program
 However good the TypeScript compiler is to reason about your code, there will arise scenarios where the programmer knows better than the type checker and thus want to override the type checker's decision. In these cases, you can use the `@ts-ignore` directive to tell TypeScript to ignore the type error:
 
 .A function that takes a list of strings and returns a record that maps the index of the string to the string itself.
+
 ```typescript
 export const calculateZIndices = <const Keys extends string[]>(
     keys: Keys,
@@ -17,7 +18,7 @@ export const calculateZIndices = <const Keys extends string[]>(
 
 This avoids the following error:
 
-```
+```text 
 TS2322: Type { [k: string]: number; } is not assignable to type { [key in Keys[number]]: number;
 ```
 
