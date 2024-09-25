@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           name: page
-          path: book
+          path: ./book
           if-no-files-found: error
 #  deploy:
 #    runs-on: ubuntu-latest
